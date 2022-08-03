@@ -35,14 +35,6 @@ export default function Controller() {
 	]);
 	const buttonsRef = React.useRef(buttons);
 	const [id, setId] = React.useState("");
-	const socket = io("http://192.168.1.231:4001", {
-		"X-Address": id,
-		"X-Name": Device.modelName,
-	});
-
-	if (id === "") {
-		socket.on("failed", () => socket.disconnect());
-	}
 
 	const setHeaders = async () => {
 		setId(await SecureStore.getItemAsync("secure_deviceid"));
@@ -51,7 +43,17 @@ export default function Controller() {
 	const call = async (side) => {
 		let id = await SecureStore.getItemAsync("secure_deviceid");
 		let object = { user_mac: id, gate: side };
+
+		const socket = await io("http://192.168.1.231:4001", {
+			"X-Address": id,
+			"X-Name": Device.modelName,
+		});
+
 		socket.emit("open", JSON.stringify(object));
+
+		setTimeout(() => {
+			socket.disconnect();
+		}, 150);
 	};
 
 	const handleClick = async (button) => {
