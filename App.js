@@ -1,5 +1,5 @@
 import React, { useEffect } from "react";
-import { StyleSheet } from "react-native";
+import { StyleSheet, View, SafeAreaView } from "react-native";
 import * as eva from "@eva-design/eva";
 import { ApplicationProvider, Layout } from "@ui-kitten/components";
 import { StatusBar } from "expo-status-bar";
@@ -10,7 +10,6 @@ import "react-native-get-random-values";
 import { v4 as uuidv4 } from "uuid";
 import { io } from "socket.io-client";
 
-import Loader from "./components/Loader";
 import MainComp from "./components/MainComp";
 import Controller from "./components/Controller";
 import Unauthorized from "./components/Unauthorized";
@@ -22,15 +21,17 @@ const getUniqueID = async (check) => {
 	if (!fetchUUID) await SecureStore.setItemAsync("secure_deviceid", uuid);
 	check();
 };
-
 export default function App() {
 	const [authorized, setAuthorized] = React.useState(null);
 	const [awaiting, setAwaiting] = React.useState(false);
 	const [isLoading, setIsLoading] = React.useState(true);
+	const [test, setTest] = React.useState("Hello");
 
 	const selectActivity = (result) => {
 		result();
-		setIsLoading(false);
+		setTimeout(() => {
+			setIsLoading(false);
+		}, 100);
 	};
 
 	const callForCheck = async () => {
@@ -63,9 +64,13 @@ export default function App() {
 		<React.Fragment>
 			<StatusBar style="light" />
 			<ApplicationProvider {...eva} theme={{ ...eva.dark, ...theme }}>
-				<Layout style={style.container}>
-					<MainComp isLoading={isLoading} />
-					{isLoading ? <Loader /> : authorized ? <Controller /> : awaiting ? <Awaiting /> : <Unauthorized />}
+				<Layout style={[style.container, style.backContainer]}>
+					<SafeAreaView style={{ width: "100%", height: "100%" }}>
+						<MainComp isLoading={isLoading} />
+						{!isLoading && (
+							<View style={{ zIndex: 2 }}>{authorized ? <Controller /> : awaiting ? <Awaiting refresh={callForCheck} /> : <Unauthorized />}</View>
+						)}
+					</SafeAreaView>
 				</Layout>
 			</ApplicationProvider>
 		</React.Fragment>
@@ -74,11 +79,14 @@ export default function App() {
 
 const style = StyleSheet.create({
 	container: {
-		display: "flex",
 		width: "100%",
 		height: "100%",
-		justifyContent: "center",
-		alignItems: "center",
+	},
+	backContainer: {
 		backgroundColor: "#2f3136",
+	},
+	backImage: {
+		width: 250,
+		height: 208,
 	},
 });

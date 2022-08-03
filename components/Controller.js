@@ -1,4 +1,5 @@
 import React, { useEffect } from "react";
+import EStyleSheet from "react-native-extended-stylesheet";
 import { StyleSheet, TouchableHighlight, View } from "react-native";
 import { Text } from "@ui-kitten/components";
 import { Spinner } from "@ui-kitten/components";
@@ -9,17 +10,16 @@ import { FontAwesomeIcon } from "@fortawesome/react-native-fontawesome";
 import { faWarehouse } from "@fortawesome/free-solid-svg-icons";
 
 const GateButton = (props) => {
-	const { additionalStyle, disabled, onPress } = props;
+	const { style, disabled, onPress } = props;
+
 	return (
-		<View style={additionalStyle}>
+		<View style={style}>
 			<TouchableHighlight onPress={onPress} underlayColor={"#50555c"} style={{ borderRadius: 15 }}>
-				<View style={style.button}>
-					<FontAwesomeIcon size={32} icon={faWarehouse} style={[style.icon, disabled && style.disabled]} />
-					<View style={style.secondLine}>
+				<View style={[styles.button, styles.shadowProp]}>
+					<FontAwesomeIcon size={32} icon={faWarehouse} style={[styles.icon, disabled && styles.disabled]} />
+					<View style={styles.secondLine}>
 						{disabled && <Spinner size="small" />}
-						<Text category={"h6"} style={disabled && [style.disabled, style.spinner]}>
-							{disabled ? "Otwieram" : props.children}
-						</Text>
+						<Text style={disabled && [styles.disabled, styles.spinner]}>{disabled ? "Otwieram" : props.children}</Text>
 					</View>
 				</View>
 			</TouchableHighlight>
@@ -28,8 +28,12 @@ const GateButton = (props) => {
 };
 
 export default function Controller() {
-	const [frontButton, setFrontButton] = React.useState({ status: false, value: "Otwórz przód" });
-	const [backButton, setBackButton] = React.useState({ status: false, value: "Otwórz tył" });
+	const [buttons, setButtons] = React.useState([
+		{ status: false, value: "Przednia brama", type: "gate", identifier: "front" },
+		{ status: false, value: "Tylnia brama", type: "gate", identifier: "back" },
+		{ status: false, value: "Brama test", type: "door", identifier: "test" },
+	]);
+	const buttonsRef = React.useRef(buttons);
 	const [id, setId] = React.useState("");
 	const socket = io("http://192.168.1.231:4001", {
 		"X-Address": id,
@@ -51,15 +55,19 @@ export default function Controller() {
 	};
 
 	const handleClick = async (button) => {
-		let handler = button === "front" ? setFrontButton : setBackButton;
-		let target = button === "front" ? frontButton : backButton;
+		let newButton = buttonsRef.current;
+		await call(button.identifier);
 
-		await call(button);
+		let id = buttons.indexOf(button);
 
-		handler({ status: true, value: "Otwieram" });
+		newButton[id] = { ...button, status: true, value: "Otwieram" };
+
+		setButtons([...newButton]);
 
 		setTimeout(() => {
-			handler({ status: false, value: target.value });
+			let inButton = buttonsRef.current;
+			inButton[id] = { ...button };
+			setButtons([...inButton]);
 		}, 5000);
 	};
 
@@ -72,21 +80,39 @@ export default function Controller() {
 	}, []);
 
 	return (
-		<View style={style.container}>
-			<GateButton disabled={frontButton.status} onPress={() => handleClick("front")}>
-				Otwórz przód
-			</GateButton>
-			<GateButton disabled={backButton.status} onPress={() => handleClick("back")} additionalStyle={{ marginLeft: 15 }}>
-				Otwórz tył
-			</GateButton>
+		<View style={{ margin: 15, display: "flex", justifyContent: "center", alignItems: "center" }}>
+			<Text category={"h4"} style={{ width: "100%" }}>
+				Kontroler urządzeń
+			</Text>
+			<View style={styles.container}>
+				{buttons?.map((el) => (
+					<GateButton
+						key={`controller-${buttons.indexOf(el)}`}
+						disabled={el.status}
+						onPress={() => handleClick(el)}
+						style={[styles.nnth_buttons, buttons.indexOf(el) % 2 !== 0 && styles.nth_buttons]}
+					>
+						{el.value}
+					</GateButton>
+				))}
+			</View>
 		</View>
 	);
 }
 
-const style = StyleSheet.create({
+const styles = StyleSheet.create({
 	container: {
 		display: "flex",
 		flexDirection: "row",
+		marginHorizontal: 15,
+		width: 325,
+		flexWrap: "wrap",
+	},
+	nth_buttons: {
+		marginLeft: 25,
+	},
+	nnth_buttons: {
+		marginTop: 25,
 	},
 	secondLine: {
 		display: "flex",
@@ -98,12 +124,12 @@ const style = StyleSheet.create({
 	button: {
 		color: "#f1f1f1",
 		backgroundColor: "#40444b",
-		borderRadius: 15,
 		borderColor: "transparent",
+		borderRadius: 15,
 		display: "flex",
-		padding: 15,
 		justifyContent: "center",
 		alignItems: "center",
+		padding: 15,
 		width: 150,
 	},
 	disabled: {
@@ -118,8 +144,8 @@ const style = StyleSheet.create({
 			width: 0,
 			height: 3,
 		},
-		shadowRadius: 10,
-		shadowOpacity: 1.0,
+		shadowRadius: 5,
+		shadowOpacity: 0.25,
 		elevation: 5,
 	},
 	indicator: {

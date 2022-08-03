@@ -1,45 +1,38 @@
-import React from "react";
-import { StyleSheet } from "react-native";
-import { Text } from "@ui-kitten/components";
-import { Image } from "react-native";
+import React, { useEffect } from "react";
+import { StyleSheet, Image, View } from "react-native";
+
+const ImageFade = (props) => {
+	const source = props.isLoading ? require("../assets/main-logo.png") : require("../assets/ghost.png");
+	const opa = props.opacity / 10;
+	return <Image source={source} style={[style.backImage, { opacity: opa }]} />;
+};
 
 export default function MainComp(props) {
+	const [opacity, setOpacity] = React.useState(9);
+	const [direction, setDirection] = React.useState(false);
+
+	useEffect(() => {
+		let i;
+		if (props.isLoading) {
+			i = setInterval(() => {
+				const newVal = direction ? opacity + 1 : opacity - 1;
+				if (newVal == 1 || newVal == 9) setDirection(!direction);
+				setOpacity(newVal);
+			}, 48);
+		}
+		return () => clearInterval(i);
+	});
+
 	return (
-		<React.Fragment>
-			<Image style={style.logo} source={require("../assets/main-logo.png")} />
-			{!props.isLoading && <Text style={[style.heading, style.shadowProp]}>Kontroler bramy</Text>}
-		</React.Fragment>
+		<View style={{ position: "absolute", zIndex: 1, top: 0, left: 0, right: 0, bottom: 0, justifyContent: "center", alignItems: "center" }}>
+			<ImageFade isLoading={props.isLoading} opacity={opacity} />
+		</View>
 	);
 }
 
 const style = StyleSheet.create({
-	heading: {
-		color: "#ffffff",
-		fontSize: 30,
-		fontWeight: "bold",
-		marginBottom: 50,
-		textShadowColor: "#000000",
-		textShadowOffset: {
-			width: 0,
-			height: 3,
-		},
-		textShadowRadius: 10,
-		elevation: 5,
-	},
-	logo: {
-		width: 150,
-		height: 125,
-		resizeMode: "contain",
-		marginBottom: 25,
-	},
-	shadowProp: {
-		shadowColor: "#000000",
-		shadowOffset: {
-			width: 0,
-			height: 3,
-		},
-		shadowRadius: 10,
-		shadowOpacity: 1.0,
-		elevation: 5,
+	backImage: {
+		width: 250,
+		height: 208,
 	},
 });

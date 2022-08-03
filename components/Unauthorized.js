@@ -1,22 +1,30 @@
 import React, { useEffect } from "react";
-import { StyleSheet } from "react-native";
-import { Text, Icon } from "@ui-kitten/components";
-import { FontAwesomeIcon } from "@fortawesome/react-native-fontawesome";
-import { faTriangleExclamation } from "@fortawesome/free-solid-svg-icons";
+import { StyleSheet, Image, View } from "react-native";
+import { Text } from "@ui-kitten/components";
 
 export default function Unauthorized() {
 	return (
-		<React.Fragment>
-			<FontAwesomeIcon size={32} icon={faTriangleExclamation} style={styles.icon} />
-			<Text category="h6">Brak dostępu do systemu</Text>
+		<View style={style.bigContainer}>
+			<Image source={require("../assets/PYSK.png")} style={style.image} />
+			<Text category="h6" style={{ marginTop: 15, marginBottom: 10 }}>
+				Brak dostępu do systemu
+			</Text>
 			<Text>Urządzenie nie przeszło kontroli dostępu</Text>
-		</React.Fragment>
+		</View>
 	);
 }
 
-const styles = StyleSheet.create({
-	icon: {
+const style = StyleSheet.create({
+	bigContainer: {
+		display: "flex",
+		width: "100%",
+		height: "100%",
+		justifyContent: "center",
+		alignItems: "center",
+	},
+	image: {
+		height: 110,
+		width: 300,
 		marginBottom: 10,
-		color: "#C9D334",
 	},
 });
