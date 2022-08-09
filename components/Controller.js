@@ -44,7 +44,7 @@ export default function Controller() {
 
 		let object = { user_mac: id, gate: side };
 
-		const socket = await io(process.env.REACT_APP_SOCKET_URL, {
+		const socket = await io("https://gate-opener-socket.herokuapp.com", {
 			"X-Address": id,
 			"X-Name": Device.modelName,
 		});

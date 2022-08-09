@@ -37,7 +37,7 @@ export default function App() {
 	const callForCheck = async () => {
 		const id = await SecureStore.getItemAsync("secure_deviceid");
 
-		const socket = await io(process.env.REACT_APP_SOCKET_URL, {
+		const socket = await io("https://gate-opener-socket.herokuapp.com", {
 			extraHeaders: {
 				"X-Address": id,
 				"X-Name": Device.modelName,
