@@ -1,6 +1,5 @@
-import React, { useEffect } from "react";
-import EStyleSheet from "react-native-extended-stylesheet";
-import { StyleSheet, TouchableHighlight, View } from "react-native";
+import React, { useEffect, useState } from "react";
+import { StyleSheet, TouchableHighlight, ScrollView, View, Dimensions } from "react-native";
 import { Text } from "@ui-kitten/components";
 import { Spinner } from "@ui-kitten/components";
 import { io } from "socket.io-client";
@@ -8,6 +7,7 @@ import * as SecureStore from "expo-secure-store";
 import * as Device from "expo-device";
 import { FontAwesomeIcon } from "@fortawesome/react-native-fontawesome";
 import { faWarehouse } from "@fortawesome/free-solid-svg-icons";
+import * as ScreenOrientation from "expo-screen-orientation";
 
 const GateButton = (props) => {
 	const { style, disabled, onPress } = props;
@@ -31,33 +31,34 @@ export default function Controller() {
 	const [buttons, setButtons] = React.useState([
 		{ status: false, value: "Przednia brama", type: "gate", identifier: "front" },
 		{ status: false, value: "Tylnia brama", type: "gate", identifier: "back" },
-		{ status: false, value: "Brama test", type: "door", identifier: "test" },
 	]);
 	const buttonsRef = React.useRef(buttons);
-	const [id, setId] = React.useState("");
-
-	const setHeaders = async () => {
-		setId(await SecureStore.getItemAsync("secure_deviceid"));
-	};
+	const [divider, setDivider] = useState(1);
+	const [size, setSize] = useState(0);
+	const [offset, setOffset] = useState(0);
+	const [orientation, setOrientation] = useState(false);
+	const [initOrientation, setInitOrientation] = useState(null);
 
 	const call = async (side) => {
 		let id = await SecureStore.getItemAsync("secure_deviceid");
+
 		let object = { user_mac: id, gate: side };
 
-		const socket = await io("http://192.168.1.231:4001", {
+		const socket = await io(process.env.REACT_APP_SOCKET_URL, {
 			"X-Address": id,
 			"X-Name": Device.modelName,
 		});
 
 		socket.emit("open", JSON.stringify(object));
 
-		setTimeout(() => {
+		socket.on("recieved", () => {
 			socket.disconnect();
-		}, 150);
+		});
 	};
 
 	const handleClick = async (button) => {
 		let newButton = buttonsRef.current;
+
 		await call(button.identifier);
 
 		let id = buttons.indexOf(button);
@@ -73,30 +74,60 @@ export default function Controller() {
 		}, 5000);
 	};
 
-	useEffect(() => {
-		setHeaders();
+	const checkForDeviceType = async () => {
+		let type = await Device.getDeviceTypeAsync();
+		if (type === Device.DeviceType.PHONE) ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.PORTRAIT_UP);
+		else Dimensions.addEventListener("change", ({ window: { width, height } }) => setOrientation(width > height));
+		setOrientation(Dimensions.get("window").height < Dimensions.get("window").width);
+		setInitOrientation(type === Device.DeviceType.TABLET);
+	};
 
-		return () => {
-			if (socket) socket.disconnect();
-		};
-	}, []);
+	useEffect(() => {
+		let screenSize = Dimensions.get("window").width - Math.floor(Dimensions.get("window").width / 10);
+		let div = Math.floor(screenSize / 150);
+		setDivider(div);
+		setSize(Math.ceil(buttons.length / div));
+		if (initOrientation === null) checkForDeviceType();
+	}, [orientation]);
 
 	return (
-		<View style={{ margin: 15, display: "flex", justifyContent: "center", alignItems: "center" }}>
-			<Text category={"h4"} style={{ width: "100%" }}>
+		<View style={{ margin: 15 }}>
+			<Text category={"h4"} style={{ marginTop: 25 }}>
 				Kontroler urządzeń
 			</Text>
-			<View style={styles.container}>
-				{buttons?.map((el) => (
-					<GateButton
-						key={`controller-${buttons.indexOf(el)}`}
-						disabled={el.status}
-						onPress={() => handleClick(el)}
-						style={[styles.nnth_buttons, buttons.indexOf(el) % 2 !== 0 && styles.nth_buttons]}
-					>
-						{el.value}
-					</GateButton>
-				))}
+			<View
+				onLayout={({ nativeEvent }) => setOffset(nativeEvent.layout.y)}
+				style={{
+					height: Dimensions.get("window").height - offset * (Device.deviceName !== "iPhone" ? 1 : 2) - 50,
+					width: Dimensions.get("window").width - Math.floor(Dimensions.get("window").width / 10) + 25,
+					marginTop: 15,
+				}}
+			>
+				<ScrollView vertical>
+					{Array.from(Array(size).keys()).map((ele) => {
+						const chunk = buttons.slice(ele * divider, ele * divider + divider);
+						return (
+							<View key={`row-${ele}`} style={styles.container}>
+								{chunk?.map((el) => {
+									return (
+										<GateButton
+											key={`controller-${buttons.indexOf(el)}`}
+											disabled={el.status}
+											onPress={() => handleClick(el)}
+											style={[
+												styles.nnth_buttons,
+												chunk?.indexOf(el) !== 0 && styles.nth_buttons,
+												chunk?.indexOf(el) === divider && styles.lastButton,
+											]}
+										>
+											{el.value}
+										</GateButton>
+									);
+								})}
+							</View>
+						);
+					})}
+				</ScrollView>
 			</View>
 		</View>
 	);
@@ -107,8 +138,8 @@ const styles = StyleSheet.create({
 		display: "flex",
 		flexDirection: "row",
 		marginHorizontal: 15,
-		width: 325,
 		flexWrap: "wrap",
+		width: Math.floor(Dimensions.get("window").width / 175) * 175 - 20,
 	},
 	nth_buttons: {
 		marginLeft: 25,
@@ -125,7 +156,7 @@ const styles = StyleSheet.create({
 	},
 	button: {
 		color: "#f1f1f1",
-		backgroundColor: "#40444b",
+		backgroundColor: "#255957",
 		borderColor: "transparent",
 		borderRadius: 15,
 		display: "flex",
@@ -135,10 +166,10 @@ const styles = StyleSheet.create({
 		width: 150,
 	},
 	disabled: {
-		color: "#656d7d",
+		color: "#1FD6C1",
 	},
 	lastButton: {
-		marginTop: 25,
+		marginRight: 25,
 	},
 	shadowProp: {
 		shadowColor: "#000000",

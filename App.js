@@ -37,7 +37,7 @@ export default function App() {
 	const callForCheck = async () => {
 		const id = await SecureStore.getItemAsync("secure_deviceid");
 
-		const socket = await io("http://192.168.1.231:4001", {
+		const socket = await io(process.env.REACT_APP_SOCKET_URL, {
 			extraHeaders: {
 				"X-Address": id,
 				"X-Name": Device.modelName,
@@ -83,7 +83,7 @@ const style = StyleSheet.create({
 		height: "100%",
 	},
 	backContainer: {
-		backgroundColor: "#2f3136",
+		backgroundColor: "#122B2A",
 	},
 	backImage: {
 		width: 250,
