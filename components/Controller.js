@@ -40,11 +40,16 @@ export default function Controller() {
 	const [initOrientation, setInitOrientation] = useState(null);
 
 	const call = async (side) => {
+		return busy;
+	};
+
+	const handleClick = async (button) => {
+		let newButton = buttonsRef.current;
+
 		let id = await SecureStore.getItemAsync("secure_deviceid");
+		let object = { user_mac: id, gate: button.identifier };
 
-		let object = { user_mac: id, gate: side };
-
-		const socket = await io("https://gate-opener-socket.herokuapp.com", {
+		const socket = await io("http://192.168.1.231:4001", {
 			"X-Address": id,
 			"X-Name": Device.modelName,
 		});
@@ -52,26 +57,24 @@ export default function Controller() {
 		socket.emit("open", JSON.stringify(object));
 
 		socket.on("recieved", () => {
+			let id = buttons.indexOf(button);
+
+			newButton[id] = { ...button, status: true, value: "Otwieram" };
+
+			setButtons([...newButton]);
+
+			setTimeout(() => {
+				let inButton = buttonsRef.current;
+				inButton[id] = { ...button };
+				setButtons([...inButton]);
+			}, 5000);
 			socket.disconnect();
 		});
-	};
 
-	const handleClick = async (button) => {
-		let newButton = buttonsRef.current;
-
-		await call(button.identifier);
-
-		let id = buttons.indexOf(button);
-
-		newButton[id] = { ...button, status: true, value: "Otwieram" };
-
-		setButtons([...newButton]);
-
-		setTimeout(() => {
-			let inButton = buttonsRef.current;
-			inButton[id] = { ...button };
-			setButtons([...inButton]);
-		}, 5000);
+		socket.on("gateBusy", (data) => {
+			alert("Socket in use, gate: " + data);
+			socket.disconnect();
+		});
 	};
 
 	const checkForDeviceType = async () => {
