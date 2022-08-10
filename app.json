@@ -4,8 +4,8 @@
 		"owner": "queivan",
 		"slug": "gate-application",
 		"version": "1.0.0",
-		"icon": "./assets/icon.png",
-		"userInterfaceStyle": "light",
+		"icon": "./assets/avatar.png",
+		"userInterfaceStyle": "dark",
 		"splash": {
 			"image": "./assets/splash.png",
 			"resizeMode": "contain",
@@ -24,7 +24,7 @@
 			"package": "jlc.gatecontrol",
 			"versionCode": 1,
 			"adaptiveIcon": {
-				"foregroundImage": "./assets/adaptive-icon.png",
+				"foregroundImage": "./assets/avatar.png",
 				"backgroundColor": "#2f3136"
 			}
 		},
