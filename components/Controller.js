@@ -48,31 +48,34 @@ export default function Controller() {
 
 		let id = await SecureStore.getItemAsync("secure_deviceid");
 		let object = { user_mac: id, gate: button.identifier };
+		let buttonId = buttons.indexOf(button);
 
 		const socket = await io("https://gate-opener-socket.herokuapp.com", {
 			"X-Address": id,
 			"X-Name": Device.modelName,
 		});
 
+		newButton[buttonId] = { ...button, status: true, value: "Otwieram" };
+
+		setButtons([...newButton]);
+
 		socket.emit("open", JSON.stringify(object));
 
 		socket.on("recieved", () => {
-			let id = buttons.indexOf(button);
-
-			newButton[id] = { ...button, status: true, value: "Otwieram" };
-
-			setButtons([...newButton]);
-
 			setTimeout(() => {
 				let inButton = buttonsRef.current;
-				inButton[id] = { ...button };
-				setButtons([...inButton]);
+				inButton[buttonId] = { ...button };
+				setButtons(() => [...inButton]);
 			}, 5000);
 			socket.disconnect();
 		});
 
 		socket.on("gateBusy", (data) => {
-			alert("Socket in use, gate: " + data);
+			const gateName = data === "front" ? "przednia" : "tylnia";
+			alert(`Brama ${gateName} aktualnie się otwiera`);
+			let inButton = buttonsRef.current;
+			inButton[id] = { ...button };
+			setButtons([...inButton]);
 			socket.disconnect();
 		});
 	};
