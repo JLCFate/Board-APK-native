@@ -49,7 +49,7 @@ export default function Controller() {
 		let id = await SecureStore.getItemAsync("secure_deviceid");
 		let object = { user_mac: id, gate: button.identifier };
 
-		const socket = await io("http://192.168.1.231:4001", {
+		const socket = await io("https://gate-opener-socket.herokuapp.com", {
 			"X-Address": id,
 			"X-Name": Device.modelName,
 		});
