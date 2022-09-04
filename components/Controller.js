@@ -50,7 +50,7 @@ export default function Controller() {
 		let object = { user_mac: id, gate: button.identifier };
 		let buttonId = buttons.indexOf(button);
 
-		const socket = await io("https://gate-opener-socket.herokuapp.com", {
+		const socket = await io("http://queivan.com:60386", {
 			"X-Address": id,
 			"X-Name": Device.modelName,
 		});
